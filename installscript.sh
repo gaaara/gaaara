@@ -172,7 +172,7 @@ sed -i "s#$pathToCreatetorrent = '';#$pathToCreatetorrent = '/usr/bin/buildtorre
 
 sed -i.bak "s/2m/10m/g;" /etc/php5/fpm/php.ini
 sed -i.bak "s/expose_php = On/expose_php = Off/g;" /etc/php5/fpm/php.ini
-sed -i.bak "s/date.timezone =/date.timezone = Europe/Paris/g;" /etc/php5/fpm/php.ini
+
 
 service php5-fpm restart
 
