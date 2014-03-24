@@ -343,10 +343,6 @@ EOF
 mkdir /etc/nginx/ssl
 cd /etc/nginx/ssl
 
-#Required
-domain=$1
-server.key=$domain
- 
 #Change to your company details
 country=na
 state=Na
@@ -361,30 +357,30 @@ password=dummypassword
 echo "Generating key request for $domain"
  
 #Generate a key
-openssl genrsa -des3 -passout pass:$password -out $domain.key 2048 -noout
+openssl genrsa -des3 -passout pass:$password -out server.key 2048 -noout
  
 #Remove passphrase from the key. Comment the line out to keep the passphrase
 echo "Removing passphrase from key"
-openssl rsa -in $domain.key -passin pass:$password -out $domain.key
+openssl rsa -in server.key -passin pass:$password -out server.key
  
 #Create the request
 echo "Creating CSR"
-openssl req -new -key $domain.key -out $domain.csr -passin pass:$password \
+openssl req -new -key server.key -out server.csr -passin pass:$password \
     -subj "/C=$country/ST=$state/L=$locality/O=$organization/OU=$organizationalunit/CN=$commonname/emailAddress=$email"
 
 echo "---------------------------"
 echo "-----Below is your CSR-----"
 echo "---------------------------"
 echo
-cat $domain.csr
+cat server.csr
  
 echo
 echo "---------------------------"
 echo "-----Below is your Key-----"
 echo "---------------------------"
 echo
-cat $domain.key
-
+cat server.key
+rm secure.key server.csr
 service nginx restart
 ###########################################################
 ##             SSL Configuration    Fin                  ##
