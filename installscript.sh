@@ -337,44 +337,10 @@ EOF
 #!/bin/bash
 mkdir /etc/nginx/ssl
 cd /etc/nginx/ssl
-
-#Change to your company details
-country=na
-state=Na
-locality=Na
-organization=Jad
-organizationalunit=IT
-email=administrator@ratata.nu
- 
-#Optional
-password=dummypassword
-  
-echo "Generating key request for $domain"
- 
-#Generate a key
-openssl genrsa -des3 -passout pass:$password -out server.key 2048 -noout
- 
-#Remove passphrase from the key. Comment the line out to keep the passphrase
-echo "Removing passphrase from key"
-openssl rsa -in server.key -passin pass:$password -out server.key
- 
-#Create the request
-echo "Creating CSR"
-openssl req -new -key server.key -out server.csr -passin pass:$password \
-    -subj "/C=$country/ST=$state/L=$locality/O=$organization/OU=$organizationalunit/CN=$commonname/emailAddress=$email"
-
-echo "---------------------------"
-echo "-----Below is your CSR-----"
-echo "---------------------------"
-echo
-cat server.csr
- 
-echo
-echo "---------------------------"
-echo "-----Below is your Key-----"
-echo "---------------------------"
-echo
-cat server.key
+openssl genrsa -des3 -out secure.key 1024
+openssl req -new -key secure.key -out server.csr
+openssl rsa -in secure.key -out server.key
+openssl x509 -req -days 3650 -in server.csr -signkey server.key -out server.crt
 rm secure.key server.csr
 service nginx restart
 ###########################################################
@@ -428,8 +394,7 @@ chmod 755 /home/$user
 ###########################################################
 mkdir /etc/nginx/passwd
 touch /etc/nginx/passwd/rutorrent_passwd
-cd /~/gaaara
-python htpasswd.py -b /etc/nginx/passwd/rutorrent_passwd $user ${pwd}
+python /root/gaaara/htpasswd.py -b /etc/nginx/passwd/rutorrent_passwd $user ${pwd}
 chown -c nginx:nginx /etc/nginx/passwd/*
 service nginx restart
 ###########################################################
