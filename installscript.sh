@@ -465,3 +465,67 @@ cat <<'EOF' >  /var/www/rutorrent/conf/users/$user/config.php
 ?>
 EOF
 sed -i.bak "s/@user@/$user/g;" /var/www/rutorrent/conf/users/$user/config.php
+
+
+cat <<'EOF' > /etc/init.d/$user-rtorrent
+#!/bin/sh -e
+# Start/Stop rtorrent sous forme de daemon.
+
+NAME=@user@-rtorrent
+SCRIPTNAME=/etc/init.d/$NAME
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+case $1 in
+        start)
+                echo "Starting rtorrent... "
+                su -l @user@ -c "screen -fn -dmS rtd nice -19 rtorrent"
+                echo "Terminated"
+        ;;
+        stop)
+                if [ "$(ps aux | grep -e '.*rtorrent$' -c)" != 0  ]; then
+                {
+                        echo "Shutting down rtorrent... "
+                        killall -r "^.*rtorrent$"
+                        echo "Terminated"
+                }
+                else
+                {
+                        echo "rtorrent not yet started !"
+                        echo "Terminated"
+                }
+                fi
+        ;;
+        restart)
+                if [ "$(ps aux | grep -e '.*rtorrent$' -c)" != 0  ]; then
+                {
+                        echo "Shutting down rtorrent... "
+                        killall -r "^.*rtorrent$"
+                        echo "Starting rtorrent... "
+                        su -l @user@ -c "screen -fn -dmS rtd nice -19 rtorrent"
+                        echo "Terminated"
+                }
+                else
+                {
+                        echo "rtorrent not yet started !"
+                        echo "Starting rtorrent... "
+                        su -l @user@ -c "screen -fn -dmS rtd nice -19 rtorrent"
+                        echo "Terminated"
+                }
+                fi
+        ;;
+        *)
+                echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+                exit 2
+        ;;
+esac
+EOF
+
+sed -i.bak "s/@user@/$user/g;" /etc/init.d/$user-rtorrent
+
+#Configuration rtorrent deamon
+chmod +x /etc/init.d/$user-rtorrent
+update-rc.d rtorrent defaults 99
+
+
+
+
