@@ -108,6 +108,8 @@ make install
 #Creation des dossier
 mkdir /var/www
 su $user -c 'mkdir -p ~/downloads ~/uploads ~/incomplete ~/rtorrent ~/rtorrent/session'
+mkdir -p /usr/local/nginx /usr/local/nginx/ssl /usr/local/nginx/pw
+
 
 #Téléchargement + déplacement de rutorrent (web)
 svn checkout http://rutorrent.googlecode.com/svn/trunk/rutorrent/
@@ -189,8 +191,6 @@ service php5-fpm restart
 ###########################################################
 ##              Configuration serveur web                ##
 ###########################################################
-mkdir /usr/local/nginx/pw
-mkdir /usr/local/nginx/ssl
 touch /usr/local/nginx/pw/rutorrent_passwd
 chmod 640 /usr/local/nginx/pw/rutorrent_passwd
 
@@ -265,8 +265,8 @@ http {
     server_name localhost;
     
     ssl on;
-    ssl_certificate /usr/local/nginx/ssl/ezseed.pem;
-    ssl_certificate_key /usr/local/nginx/ssl/ezseed.key;
+    ssl_certificate /usr/local/nginx/ssl/serv.pem;
+    ssl_certificate_key /usr/local/nginx/ssl/serv.key;
     
     add_header Strict-Transport-Security max-age=500; 
 
@@ -307,34 +307,12 @@ http {
 EOF
 
 
-
-
-cat <<'EOF' > /etc/nginx/conf.d/php
-location ~ \.php$ {
-	fastcgi_index index.php;
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-	include /etc/nginx/fastcgi_params;
-}
-EOF
-
-cat <<'EOF' > /etc/nginx/conf.d/cache
-location ~* \.(jpg|jpeg|gif|css|png|js|woff|ttf|svg|eot)$ {
-    expires 7d;
-    access_log off;
-}
-
-location ~* \.(eot|ttf|woff|svg)$ {
-    add_header Acccess-Control-Allow-Origin *;
-}
-EOF
-
 ###########################################################
 ##             SSL Configuration                         ##
 ###########################################################
 
 #!/bin/bash
-mkdir /usr/local/nginx/ssl
+
 openssl req -new -x509 -days 3658 -nodes -newkey rsa:2048 -out /usr/local/nginx/ssl/serv.pem -keyout /usr/local/nginx/ssl/serv.key<<EOF
 RU
 Russia
@@ -349,24 +327,7 @@ service nginx restart
 ###########################################################
 ##             SSL Configuration    Fin                  ##
 ###########################################################
-rm /etc/logrotate.d/nginx && touch /etc/logrotate.d/nginx
-##Configuration de Logrotate pour nginx
 
-cat <<'EOF' > /etc/logrotate.d/nginx
-/var/log/nginx/*.log {
-	daily
-	missingok
-	rotate 52
-	compress
-	delaycompress
-	notifempty
-	create 640 root
-	sharedscripts
-        postrotate
-                [ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
-        endscript
-}
-EOF
 #SSH config
 sed -i.bak "s/Subsystem sftp/#Subsystem sftp/g;" /etc/ssh/sshd_config
 sed -i.bak "s/UsePAM/#UsePAM/g;" /etc/php5/fpm/php.ini
