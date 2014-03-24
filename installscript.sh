@@ -189,14 +189,15 @@ service php5-fpm restart
 ###########################################################
 ##              Configuration serveur web                ##
 ###########################################################
-
-mkdir /usr/local/nginx/passwd
-touch /usr/local/nginx/passwd/rutorrent_passwd
-chmod 640 /usr/local/nginx/passwd/rutorrent_passwd
+mkdir /usr/local/nginx/pw
+mkdir /usr/local/nginx/ssl
+touch /usr/local/nginx/pw/rutorrent_passwd
+chmod 640 /usr/local/nginx/pw/rutorrent_passwd
 
 rm /etc/nginx/nginx.conf
 
 cat <<'EOF' > /etc/nginx/nginx.conf
+
 worker_processes 8;
 user www-data www-data;
 events {
@@ -245,7 +246,7 @@ http {
       index index.php index.html index.htm;
       server_tokens off;
       auth_basic "Entrez un mot de passe";
-      auth_basic_user_file "/usr/local/nginx/passwd/rutorrent_passwd";
+      auth_basic_user_file "/usr/local/nginx/pw/rutorrent_passwd";
     }
 
     location ~ \.php$ {
@@ -264,8 +265,8 @@ http {
     server_name localhost;
     
     ssl on;
-    ssl_certificate /usr/local/nginx/ssl/serv.pem;
-    ssl_certificate_key /usr/local/nginx/ssl/serv.key;
+    ssl_certificate /usr/local/nginx/ssl/ezseed.pem;
+    ssl_certificate_key /usr/local/nginx/ssl/ezseed.key;
     
     add_header Strict-Transport-Security max-age=500; 
 
@@ -288,7 +289,7 @@ http {
 
     location /rutorrent {
       auth_basic "Entrez un mot de passe";
-      auth_basic_user_file "/usr/local/nginx/passwd/rutorrent_passwd";
+      auth_basic_user_file "/usr/local/nginx/pw/rutorrent_passwd";
       root /var/www;
       index index.php index.html index.htm;
       server_tokens off;
@@ -302,6 +303,7 @@ http {
     }
   }
 }
+
 EOF
 
 
@@ -324,95 +326,6 @@ location ~* \.(jpg|jpeg|gif|css|png|js|woff|ttf|svg|eot)$ {
 
 location ~* \.(eot|ttf|woff|svg)$ {
     add_header Acccess-Control-Allow-Origin *;
-}
-EOF
-
-mkdir /etc/nginx/sites-enabled
-touch /etc/nginx/sites-enabled/rutorrent.conf
-
-cat <<'EOF' > /etc/nginx/sites-enabled/rutorrent.conf
-server {
-    listen 80 default_server;
-    listen 443 default_server ssl;
-    server_name _;
-    index index.html index.php;
-    charset utf-8;
-
-    ssl_certificate /etc/nginx/ssl/server.crt;
-    ssl_certificate_key /etc/nginx/ssl/server.key;
-
-    access_log /var/log/nginx/rutorrent-access.log combined;
-    error_log /var/log/nginx/rutorrent-error.log error;
-    
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html { root /usr/share/nginx/html; }
-
-    auth_basic "seedbox";
-    auth_basic_user_file "/etc/nginx/passwd/rutorrent_passwd";
-    
-    location = /favicon.ico {
-        access_log off;
-        return 204;
-    }
-    
-	
-    ## début config rutorrent ##
-
-    location ^~ /rutorrent {
-	root /var/www;
-	include /etc/nginx/conf.d/php;
-	include /etc/nginx/conf.d/cache;
-
-	location ~ /\.svn {
-		deny all;
-	}
-
-	location ~ /\.ht {
-		deny all;
-	}
-    }
-
-    location ^~ /rutorrent/conf/ {
-	deny all;
-    }
-
-    location ^~ /rutorrent/share/ {
-	deny all;
-    }
-    
-    ## fin config rutorrent ##
-
-    ## Début config cakebox 2.8 ##
-
-#    location ^~ /cakebox {
-#	root /var/www/;
-#	include /etc/nginx/conf.d/php;
-#	include /etc/nginx/conf.d/cache;
-#    }
-
-#    location /cakebox/downloads {
-#	root /var/www;
-#	satisfy any;
-#	allow all;
-#    }
-
-    ## fin config cakebox 2.8 ##
-
-    ## début config seedbox manager ##
-
-#    location ^~ / {
-#	root /var/www/manager;
-#	include /etc/nginx/conf.d/php;
-#	include /etc/nginx/conf.d/cache;
-#    }
-
-#    location ^~ /conf/ {
-#	root /var/www/manager;
-#	deny all;
-#    }
-
-    ## fin config seedbox manager ##
-
 }
 EOF
 
@@ -482,10 +395,8 @@ chmod 755 /home/$user
 ###########################################################
 ##                    htpasswd                           ##
 ###########################################################
-mkdir /usr/local/nginx/passwd
-touch /usr/local/nginx/passwd/rutorrent_passwd
-python /root/gaaara/htpasswd.py -b /usr/local/nginx/passwd/rutorrent_passwd $user ${pwd}
-chown -c nginx:nginx /usr/local/nginx/passwd/*
+python /root/gaaara/htpasswd.py -b /usr/local/nginx/pw/rutorrent_passwd $user ${pwd}
+chown -c nginx:nginx /usr/local/nginx/pw/*
 service nginx restart
 ###########################################################
 ##                    htpasswd                           ##
