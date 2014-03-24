@@ -170,51 +170,137 @@ sed -i.bak "s/2m/10m/g;" /etc/php5/fpm/php.ini
 sed -i.bak "s/expose_php = On/expose_php = Off/g;" /etc/php5/fpm/php.ini
 sed -i.bak "s/date.timezone =/date.timezone = Europe/Paris/g;" /etc/php5/fpm/php.ini
 
+echo "
+[www]
+listen = /etc/phpcgi/php-cgi.socket
+user = www-data
+group = www-data
+pm.max_children = 4096
+pm.start_servers = 4
+pm.min_spare_servers = 4
+pm.max_spare_servers = 128
+pm.max_requests = 4096
+" >> /etc/php5/fpm/php-fpm.conf
+
+mkdir /etc/phpcgi
+
 service php5-fpm restart
 
 ###########################################################
 ##              Configuration serveur web                ##
 ###########################################################
 
-mkdir /etc/nginx/passwd
-mkdir /etc/nginx/ssl
-touch /etc/nginx/passwd/rutorrent_passwd
-chmod 640 /etc/nginx/passwd/rutorrent_passwd
+mkdir /usr/local/nginx/passwd
+touch /usr/local/nginx/passwd/rutorrent_passwd
+chmod 640 /usr/local/nginx/passwd/rutorrent_passwd
 
 rm /etc/nginx/nginx.conf
 
 cat <<'EOF' > /etc/nginx/nginx.conf
-user nginx;
-worker_processes auto;
-
-pid /var/run/nginx.pid;
-events { worker_connections 1024; }
+worker_processes 8;
+user www-data www-data;
+events {
+  worker_connections 1024;
+}
 
 http {
-    include /etc/nginx/mime.types;
-    default_type  application/octet-stream;
+  client_max_body_size 20G; 
+  include mime.types;
+  default_type application/octet-stream;
+  sendfile on;
+  keepalive_timeout 65;
+  gzip on;
+  gzip_min_length 0;
+  gzip_http_version 1.0;
+  gzip_types text/plain text/xml application/xml application/json text/css application/x-javascript text/javascript application/javascript;
+  #####
+  #HTTP#
+  #####
+  upstream nodejs { 
+    server 127.0.0.1:3001 max_fails=0 fail_timeout=0; 
+  } 
 
-    access_log /var/log/nginx/access.log combined;
-    error_log /var/log/nginx/error.log error;
-    
-    sendfile on;
-    keepalive_timeout 20;
-    keepalive_disable msie6;
-    keepalive_requests 100;
-    tcp_nopush on;
-    tcp_nodelay off;
-    server_tokens off;
-    
-    gzip on;
-    gzip_buffers 16 8k;
-    gzip_comp_level 5;
-    gzip_disable "msie6";
-    gzip_min_length 20;
-    gzip_proxied any;
-    gzip_types text/plain text/css application/json  application/x-javascript text/xml application/xml application/xml+rss  text/javascript;
-    gzip_vary on;
+  server {
+    listen 80;
+    server_name localhost;
 
-    include /etc/nginx/sites-enabled/*.conf;
+    location / { 
+      proxy_pass  http://nodejs; 
+      proxy_max_temp_file_size 0;
+      proxy_redirect off; 
+      proxy_set_header Host $host ; 
+      proxy_set_header X-Real-IP $remote_addr ; 
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for ; 
+    } 
+
+    location /socket.io/ {
+      proxy_pass http://nodejs;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+    }
+
+    location /rutorrent {
+      root /var/www;
+      index index.php index.html index.htm;
+      server_tokens off;
+      auth_basic "Entrez un mot de passe";
+      auth_basic_user_file "/usr/local/nginx/passwd/rutorrent_passwd";
+    }
+
+    location ~ \.php$ {
+      root "/var/www";
+      fastcgi_pass unix:/etc/phpcgi/php-cgi.socket;
+      fastcgi_index index.php;
+      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+      include fastcgi_params;
+    }
+  }
+  ######
+  #SSL##
+  ######
+  server {
+    listen 443;
+    server_name localhost;
+    
+    ssl on;
+    ssl_certificate /usr/local/nginx/ssl/serv.pem;
+    ssl_certificate_key /usr/local/nginx/ssl/serv.key;
+    
+    add_header Strict-Transport-Security max-age=500; 
+
+    location / { 
+      proxy_pass  http://nodejs; 
+      proxy_redirect off; 
+      proxy_max_temp_file_size 0;
+      proxy_set_header Host $host ; 
+      proxy_set_header X-Real-IP $remote_addr ; 
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for ; 
+      proxy_set_header X-Forwarded-Proto https; 
+    } 
+
+    location /socket.io/ {
+      proxy_http_version 1.1;
+      proxy_pass http://nodejs;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+    }
+
+    location /rutorrent {
+      auth_basic "Entrez un mot de passe";
+      auth_basic_user_file "/usr/local/nginx/passwd/rutorrent_passwd";
+      root /var/www;
+      index index.php index.html index.htm;
+      server_tokens off;
+    }
+    location ~ \.php$ {
+      root "/var/www";
+      fastcgi_pass unix:/etc/phpcgi/php-cgi.socket;
+      fastcgi_index index.php;
+      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+      include fastcgi_params;
+    }
+  }
 }
 EOF
 
@@ -335,13 +421,17 @@ EOF
 ###########################################################
 
 #!/bin/bash
-mkdir /etc/nginx/ssl
-cd /etc/nginx/ssl
-openssl genrsa -des3 -out secure.key 1024
-openssl req -new -key secure.key -out server.csr
-openssl rsa -in secure.key -out server.key
-openssl x509 -req -days 3650 -in server.csr -signkey server.key -out server.crt
-rm secure.key server.csr
+mkdir /usr/local/nginx/ssl
+openssl req -new -x509 -days 3658 -nodes -newkey rsa:2048 -out /usr/local/nginx/ssl/serv.pem -keyout /usr/local/nginx/ssl/serv.key<<EOF
+RU
+Russia
+Moskva
+wrty
+wrty LTD
+wrty.com
+contact@wrty.com
+EOF
+
 service nginx restart
 ###########################################################
 ##             SSL Configuration    Fin                  ##
@@ -392,10 +482,10 @@ chmod 755 /home/$user
 ###########################################################
 ##                    htpasswd                           ##
 ###########################################################
-mkdir /etc/nginx/passwd
-touch /etc/nginx/passwd/rutorrent_passwd
-python /root/gaaara/htpasswd.py -b /etc/nginx/passwd/rutorrent_passwd $user ${pwd}
-chown -c nginx:nginx /etc/nginx/passwd/*
+mkdir /usr/local/nginx/passwd
+touch /usr/local/nginx/passwd/rutorrent_passwd
+python /root/gaaara/htpasswd.py -b /usr/local/nginx/passwd/rutorrent_passwd $user ${pwd}
+chown -c nginx:nginx /usr/local/nginx/passwd/*
 service nginx restart
 ###########################################################
 ##                    htpasswd                           ##
