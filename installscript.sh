@@ -111,7 +111,7 @@ su $user -c 'mkdir -p ~/downloads ~/uploads ~/incomplete ~/rtorrent ~/rtorrent/s
 mkdir -p /usr/local/nginx /usr/local/nginx/ssl /usr/local/nginx/pw /etc/nginx/sites-enabled
 touch /etc/nginx/sites-enabled/rutorrent.conf
 touch /usr/local/nginx/pw/rutorrent_passwd
-chmod 640 /usr/local/nginx/pw/rutorrent_passwd
+
 
 #Téléchargement + déplacement de rutorrent (web)
 svn checkout http://rutorrent.googlecode.com/svn/trunk/rutorrent/
@@ -398,6 +398,8 @@ chmod 755 /home/$user
 ##                    htpasswd                           ##
 ###########################################################
 python /root/gaaara/htpasswd.py -b /usr/local/nginx/pw/rutorrent_passwd $user ${pwd}
+chmod 640 /usr/local/nginx/pw/rutorrent_passwd/*
+chown -c nginx:nginx /usr/local/nginx/pw/*
 service nginx restart
 ###########################################################
 ##                    htpasswd                           ##
