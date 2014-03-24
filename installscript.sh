@@ -67,12 +67,7 @@ $packetg install -y htop python build-essential pkg-config libcurl4-openssl-dev 
 
 
 ##Working directory##
-mkdir work
-
-if [ -z $workdir ]
-then
-        homedir="/work"
-fi
+cd gaaara
 ###########################################################
 ##     Installation XMLRPC Libtorrent Rtorrent           ##
 ###########################################################
@@ -433,8 +428,7 @@ chmod 755 /home/$user
 ###########################################################
 mkdir /etc/nginx/passwd
 touch /etc/nginx/passwd/rutorrent_passwd
-cd $workdir
-wget http://trac.edgewall.org/export/10791/trunk/contrib/htpasswd.py
+cd /~/gaaara
 python htpasswd.py -b /etc/nginx/passwd/rutorrent_passwd $user ${pwd}
 chown -c nginx:nginx /etc/nginx/passwd/*
 service nginx restart
