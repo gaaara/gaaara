@@ -357,7 +357,6 @@ chmod 755 /home/$user
 ##                    htpasswd                           ##
 ###########################################################
 python /root/gaaara/htpasswd.py -b /usr/local/nginx/pw/rutorrent_passwd $user ${pwd}
-chown -c nginx:nginx /usr/local/nginx/pw/*
 service nginx restart
 ###########################################################
 ##                    htpasswd                           ##
