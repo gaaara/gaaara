@@ -107,7 +107,6 @@ make install
 mkdir /var/www
 su $user -c 'mkdir -p ~/downloads ~/uploads ~/incomplete ~/rtorrent ~/rtorrent/session'
 mkdir -p /usr/local/nginx /usr/local/nginx/ssl /usr/local/nginx/pw /etc/nginx/sites-enabled
-touch /etc/nginx/sites-enabled/rutorrent.conf
 touch /usr/local/nginx/pw/rutorrent_passwd
 
 
