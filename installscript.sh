@@ -210,22 +210,6 @@ http {
     listen 80;
     server_name localhost;
 
-    location / { 
-      proxy_pass  http://nodejs; 
-      proxy_max_temp_file_size 0;
-      proxy_redirect off; 
-      proxy_set_header Host $host ; 
-      proxy_set_header X-Real-IP $remote_addr ; 
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for ; 
-    } 
-
-    location /socket.io/ {
-      proxy_pass http://nodejs;
-      proxy_http_version 1.1;
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection "upgrade";
-    }
-
     location /rutorrent {
       root /var/www;
       index index.php index.html index.htm;
@@ -254,23 +238,6 @@ http {
     ssl_certificate_key /usr/local/nginx/ssl/serv.key;
     
     add_header Strict-Transport-Security max-age=500; 
-
-    location / { 
-      proxy_pass  http://nodejs; 
-      proxy_redirect off; 
-      proxy_max_temp_file_size 0;
-      proxy_set_header Host $host ; 
-      proxy_set_header X-Real-IP $remote_addr ; 
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for ; 
-      proxy_set_header X-Forwarded-Proto https; 
-    } 
-
-    location /socket.io/ {
-      proxy_http_version 1.1;
-      proxy_pass http://nodejs;
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection "upgrade";
-    }
 
     location /rutorrent {
       auth_basic "Entrez un mot de passe";
