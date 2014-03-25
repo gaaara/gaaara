@@ -46,10 +46,7 @@ deb-src http://packages.dotdeb.org wheezy-php55 all
 
 # dépôt nginx
 deb http://nginx.org/packages/debian/ wheezy nginx
-deb-src http://nginx.org/packages/debian/ wheezy nginx
-
-#mongodb source
-deb http://downloads-distro.mongodb.org/repo/debian-sysvinit dist 10gen ">> /etc/apt/sources.list
+deb-src http://nginx.org/packages/debian/ wheezy nginx ">> /etc/apt/sources.list
 
 #Ajout des clée
 
@@ -63,25 +60,15 @@ cd /tmp
 wget http://nginx.org/keys/nginx_signing.key
 apt-key add nginx_signing.key
 
-## mongodb source
 
 # Installation des paquets vitaux
 $packetg update
 $packetg safe-upgrade -y
-$packetg install -y htop mongodb-10gen openssl  python build-essential libssl-dev pkg-config whois  libcurl4-openssl-dev libsigc++-2.0-dev libncurses5-dev nginx vim nano screen subversion apache2-utils curl php5 php5-cli php5-fpm php5-curl php5-geoip git unzip unrar rar zip ffmpeg buildtorrent curl mediainfo
+$packetg install -y htop openssl python build-essential libssl-dev pkg-config whois  libcurl4-openssl-dev libsigc++-2.0-dev libncurses5-dev nginx vim nano screen subversion apache2-utils curl php5 php5-cli php5-fpm php5-curl php5-geoip git unzip unrar rar zip ffmpeg buildtorrent curl mediainfo
 
 
 ##Working directory##
 cd gaaara
-
-
-git clone https://github.com/joyent/node.git
-cd node
-git checkout v0.10.26
-./configure --openssl-libpath=/usr/lib/ssl
-make
-make install
-
 
 ###########################################################
 ##     Installation XMLRPC Libtorrent Rtorrent           ##
@@ -291,7 +278,7 @@ http {
 
     location /rutorrent {
       auth_basic "Entrez un mot de passe";
-      auth_basic_user_file "/usr/local/nginx/rutorrent_passwd";
+      auth_basic_user_file "/usr/local/nginx/pw/rutorrent_passwd";
       root /var/www;
       index index.php index.html index.htm;
       server_tokens off;
