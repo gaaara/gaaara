@@ -46,7 +46,10 @@ deb-src http://packages.dotdeb.org wheezy-php55 all
 
 # dépôt nginx
 deb http://nginx.org/packages/debian/ wheezy nginx
-deb-src http://nginx.org/packages/debian/ wheezy nginx" >> /etc/apt/sources.list
+deb-src http://nginx.org/packages/debian/ wheezy nginx
+
+#mongodb source
+deb http://downloads-distro.mongodb.org/repo/debian-sysvinit dist 10gen ">> /etc/apt/sources.list
 
 #Ajout des clée
 
@@ -60,14 +63,26 @@ cd /tmp
 wget http://nginx.org/keys/nginx_signing.key
 apt-key add nginx_signing.key
 
+## mongodb source
+
 # Installation des paquets vitaux
 $packetg update
 $packetg safe-upgrade -y
-$packetg install -y htop python build-essential pkg-config libcurl4-openssl-dev libsigc++-2.0-dev libncurses5-dev nginx vim nano screen subversion apache2-utils curl php5 php5-cli php5-fpm php5-curl php5-geoip git unzip unrar rar zip ffmpeg buildtorrent curl mediainfo
+$packetg install -y htop mongodb-10gen openssl  python build-essential libssl-dev pkg-config whois  libcurl4-openssl-dev libsigc++-2.0-dev libncurses5-dev nginx vim nano screen subversion apache2-utils curl php5 php5-cli php5-fpm php5-curl php5-geoip git unzip unrar rar zip ffmpeg buildtorrent curl mediainfo
 
 
 ##Working directory##
 cd gaaara
+
+
+git clone https://github.com/joyent/node.git
+cd node
+git checkout v0.10.26
+./configure --openssl-libpath=/usr/lib/ssl
+make
+make install
+
+
 ###########################################################
 ##     Installation XMLRPC Libtorrent Rtorrent           ##
 ###########################################################
@@ -185,168 +200,130 @@ rm /etc/nginx/nginx.conf
 
 cat <<'EOF' > /etc/nginx/nginx.conf
 
-user nginx;
-worker_processes auto;
-
-pid /var/run/nginx.pid;
-events { worker_connections 1024; }
+worker_processes 8;
+user www-data www-data;
+events {
+  worker_connections 1024;
+}
 
 http {
-    include /etc/nginx/mime.types;
-    default_type  application/octet-stream;
+  client_max_body_size 20G; 
+  include mime.types;
+  default_type application/octet-stream;
+  sendfile on;
+  keepalive_timeout 65;
+  gzip on;
+  gzip_min_length 0;
+  gzip_http_version 1.0;
+  gzip_types text/plain text/xml application/xml application/json text/css application/x-javascript text/javascript application/javascript;
+  #####
+  #HTTP#
+  #####
+  upstream nodejs { 
+    server 127.0.0.1:3001 max_fails=0 fail_timeout=0; 
+  } 
 
-    access_log /var/log/nginx/access.log combined;
-    error_log /var/log/nginx/error.log error;
+  server {
+    listen 80;
+    server_name localhost;
+
+    location / { 
+      proxy_pass  http://nodejs; 
+      proxy_max_temp_file_size 0;
+      proxy_redirect off; 
+      proxy_set_header Host $host ; 
+      proxy_set_header X-Real-IP $remote_addr ; 
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for ; 
+    } 
+
+    location /socket.io/ {
+      proxy_pass http://nodejs;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+    }
+
+    location /rutorrent {
+      root /var/www;
+      index index.php index.html index.htm;
+      server_tokens off;
+      auth_basic "Entrez un mot de passe";
+      auth_basic_user_file "/usr/local/nginx/pw/rutorrent_passwd";
+    }
+
+    location ~ \.php$ {
+      root "/var/www";
+      fastcgi_pass unix:/etc/phpcgi/php-cgi.socket;
+      fastcgi_index index.php;
+      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+      include fastcgi_params;
+    }
+  }
+  ######
+  #SSL##
+  ######
+  server {
+    listen 443;
+    server_name localhost;
     
-    sendfile on;
-    keepalive_timeout 20;
-    keepalive_disable msie6;
-    keepalive_requests 100;
-    tcp_nopush on;
-    tcp_nodelay off;
-    server_tokens off;
-    
-    gzip on;
-    gzip_buffers 16 8k;
-    gzip_comp_level 5;
-    gzip_disable "msie6";
-    gzip_min_length 20;
-    gzip_proxied any;
-    gzip_types text/plain text/css application/json  application/x-javascript text/xml application/xml application/xml+rss  text/javascript;
-    gzip_vary on;
-
-    include /etc/nginx/sites-enabled/*.conf;
-}
-EOF
-
-cat <<'EOF' > /etc/nginx/sites-enabled/rutorrent.conf
-server {
-    listen 80 default_server;
-    listen 443 default_server ssl;
-    server_name _;
-    index index.html index.php;
-    charset utf-8;
-
-    ssl_certificate /usr/local/nginx/ssl/serv.pem;
+    ssl on;
+    ssl_certificate usr /usr/local/nginx/ssl/serv.pem;
     ssl_certificate_key /usr/local/nginx/ssl/serv.key;
-
-    access_log /var/log/nginx/rutorrent-access.log combined;
-    error_log /var/log/nginx/rutorrent-error.log error;
     
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html { root /usr/share/nginx/html; }
+    add_header Strict-Transport-Security max-age=500; 
 
-    auth_basic "seedbox";
-    auth_basic_user_file "/usr/local/nginx/pw/rutorrent_passwd";
-    
-    location = /favicon.ico {
-        access_log off;
-        return 204;
-    }
-    
-    ## début config rutorrent ##
+    location / { 
+      proxy_pass  http://nodejs; 
+      proxy_redirect off; 
+      proxy_max_temp_file_size 0;
+      proxy_set_header Host $host ; 
+      proxy_set_header X-Real-IP $remote_addr ; 
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for ; 
+      proxy_set_header X-Forwarded-Proto https; 
+    } 
 
-    location ^~ /rutorrent {
-	root /var/www;
-	include /etc/nginx/conf.d/php;
-	include /etc/nginx/conf.d/cache;
-
-	location ~ /\.svn {
-		deny all;
-	}
-
-	location ~ /\.ht {
-		deny all;
-	}
+    location /socket.io/ {
+      proxy_http_version 1.1;
+      proxy_pass http://nodejs;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
     }
 
-    location ^~ /rutorrent/conf/ {
-	deny all;
+    location /rutorrent {
+      auth_basic "Entrez un mot de passe";
+      auth_basic_user_file "/usr/local/nginx/rutorrent_passwd";
+      root /var/www;
+      index index.php index.html index.htm;
+      server_tokens off;
     }
-
-    location ^~ /rutorrent/share/ {
-	deny all;
+    location ~ \.php$ {
+      root "/var/www";
+      fastcgi_pass unix:/etc/phpcgi/php-cgi.socket;
+      fastcgi_index index.php;
+      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+      include fastcgi_params;
     }
-    
-    ## fin config rutorrent ##
-
-    ## Début config cakebox 2.8 ##
-
-#    location ^~ /cakebox {
-#	root /var/www/;
-#	include /etc/nginx/conf.d/php;
-#	include /etc/nginx/conf.d/cache;
-#    }
-
-#    location /cakebox/downloads {
-#	root /var/www;
-#	satisfy any;
-#	allow all;
-#    }
-
-    ## fin config cakebox 2.8 ##
-
-    ## début config seedbox manager ##
-
-#    location ^~ / {
-#	root /var/www/manager;
-#	include /etc/nginx/conf.d/php;
-#	include /etc/nginx/conf.d/cache;
-#    }
-
-#    location ^~ /conf/ {
-#	root /var/www/manager;
-#	deny all;
-#    }
-
-    ## fin config seedbox manager ##
-
+  }
 }
 EOF
 
+echo "include /usr/local/bin" >> /etc/ld.so.conf
+ldconfig
 
+#onfig dans php-fpm.conf
+echo "
+[www]
+listen = /etc/phpcgi/php-cgi.socket
+user = www-data
+group = www-data
+pm.max_children = 4096
+pm.start_servers = 4
+pm.min_spare_servers = 4
+pm.max_spare_servers = 128
+pm.max_requests = 4096
+" >> /etc/php5/fpm/php-fpm.conf
 
-cat <<'EOF' > /etc/nginx/conf.d/php
-location ~ \.php$ {
-	fastcgi_index index.php;
-	fastcgi_pass unix:/var/run/php5-fpm.sock;
-	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-	include /etc/nginx/fastcgi_params;
-}
-EOF
-
-
-cat <<'EOF' > /etc/nginx/conf.d/cache
-location ~* \.(jpg|jpeg|gif|css|png|js|woff|ttf|svg|eot)$ {
-    expires 7d;
-    access_log off;
-}
-
-location ~* \.(eot|ttf|woff|svg)$ {
-    add_header Acccess-Control-Allow-Origin *;
-}
-EOF
-
-rm /etc/logrotate.d/nginx && touch /etc/logrotate.d/nginx
-
-cat <<'EOF' > /etc/logrotate.d/nginx
-/var/log/nginx/*.log {
-	daily
-	missingok
-	rotate 52
-	compress
-	delaycompress
-	notifempty
-	create 640 root
-	sharedscripts
-        postrotate
-                [ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
-        endscript
-}
-EOF
-
-
-
+mkdir /etc/phpcgi
 
 ###########################################################
 ##             SSL Configuration                         ##
