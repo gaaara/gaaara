@@ -253,7 +253,7 @@ server {
 EOF
 cat <<'EOF' > /etc/nginx/conf.d/php-sock.conf
 upstream php5-fpm-sock {
-        server unix:/var/run/php5-fpm.soc;
+        server unix:/etc/phpcgi/php-cgi.socket;;
 }
 EOF
 echo "include /usr/local/bin" >> /etc/ld.so.conf
