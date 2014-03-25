@@ -66,10 +66,6 @@ $packetg update
 $packetg safe-upgrade -y
 $packetg install -y htop openssl python build-essential libssl-dev pkg-config whois  libcurl4-openssl-dev libsigc++-2.0-dev libncurses5-dev nginx vim nano screen subversion apache2-utils curl php5 php5-cli php5-fpm php5-curl php5-geoip git unzip unrar rar zip ffmpeg buildtorrent curl mediainfo
 
-
-##Working directory##
-cd gaaara
-
 ###########################################################
 ##     Installation XMLRPC Libtorrent Rtorrent           ##
 ###########################################################
