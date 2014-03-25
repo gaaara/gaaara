@@ -182,80 +182,80 @@ rm /etc/nginx/nginx.conf
 
 cat <<'EOF' > /etc/nginx/nginx.conf
 
-worker_processes 8;
 user www-data www-data;
-events {
-  worker_connections 1024;
-}
+worker_processes auto;
+
+pid /var/run/nginx.pid;
+events { worker_connections 1024; }
 
 http {
-  client_max_body_size 20G; 
-  include mime.types;
-  default_type application/octet-stream;
-  sendfile on;
-  keepalive_timeout 65;
-  gzip on;
-  gzip_min_length 0;
-  gzip_http_version 1.0;
-  gzip_types text/plain text/xml application/xml application/json text/css application/x-javascript text/javascript application/javascript;
-  #####
-  #HTTP#
-  #####
-  upstream nodejs { 
-    server 127.0.0.1:3001 max_fails=0 fail_timeout=0; 
-  } 
+    include /etc/nginx/mime.types;
+    default_type  application/octet-stream;
 
-  server {
-    listen 80;
-    server_name localhost;
-
-    location /rutorrent {
-      root /var/www;
-      index index.php index.html index.htm;
-      server_tokens off;
-      auth_basic "Entrez un mot de passe";
-      auth_basic_user_file "/usr/local/nginx/pw/rutorrent_passwd";
-    }
-
-    location ~ \.php$ {
-      root "/var/www";
-      fastcgi_pass unix:/etc/phpcgi/php-cgi.socket;
-      fastcgi_index index.php;
-      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-      include fastcgi_params;
-    }
-  }
-  ######
-  #SSL##
-  ######
-  server {
-    listen 443;
-    server_name localhost;
+    access_log /var/log/nginx/access.log combined;
+    error_log /var/log/nginx/error.log error;
     
-    ssl on;
-    ssl_certificate usr /usr/local/nginx/ssl/serv.pem;
-    ssl_certificate_key /usr/local/nginx/ssl/serv.key;
+    sendfile on;
+    keepalive_timeout 20;
+    keepalive_disable msie6;
+    keepalive_requests 100;
+    tcp_nopush on;
+    tcp_nodelay off;
+    server_tokens off;
     
-    add_header Strict-Transport-Security max-age=500; 
+    gzip on;
+    gzip_buffers 16 8k;
+    gzip_comp_level 5;
+    gzip_disable "msie6";
+    gzip_min_length 20;
+    gzip_proxied any;
+    gzip_types text/plain text/css application/json  application/x-javascript text/xml application/xml application/xml+rss  text/javascript;
+    gzip_vary on;
 
-    location /rutorrent {
-      auth_basic "Entrez un mot de passe";
-      auth_basic_user_file "/usr/local/nginx/pw/rutorrent_passwd";
-      root /var/www;
-      index index.php index.html index.htm;
-      server_tokens off;
-    }
-    location ~ \.php$ {
-      root "/var/www";
-      fastcgi_pass unix:/etc/phpcgi/php-cgi.socket;
-      fastcgi_index index.php;
-      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-      include fastcgi_params;
-    }
-  }
+    include /etc/nginx/sites-enabled/*.conf;
 }
 EOF
+touch /etc/nginx/sites-enabled/rutorrent.conf
+cat <<'EOF' > /etc/nginx/sites-enabled/rutorrent.conf
+server {
+    listen 80 default_server;
+    listen 443 default_server ssl;
+    server_name _;
+    index index.html index.php;
+    charset utf-8;
 
+    ssl_certificate /usr/local/nginx/ssl/serv.crt;
+    ssl_certificate_key /usr/local/nginx/ssl/serv.key;
+
+    access_log /var/log/nginx/rutorrent-access.log combined;
+    error_log /var/log/nginx/rutorrent-error.log error;
+    
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html { root /usr/share/nginx/html; }
+
+    auth_basic "seedbox";
+    auth_basic_user_file "/etc/nginx/passwd/rutorrent_passwd";
+    
+    location = /favicon.ico {
+        access_log off;
+        return 204;
+    }
+    
+    location ~ \.php$ {
+                try_files $uri =404;
+
+                fastcgi_pass php5-fpm-sock;
+                include fastcgi_params;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_intercept_errors on;
+                fastcgi_param HTTPS on;
+        }
+EOF
+cat <<'EOF' > /etc/nginx/conf.d/php-sock.conf
+upstream php5-fpm-sock {
+        server unix:/var/run/php5-fpm.soc;
+}
+EOF
 echo "include /usr/local/bin" >> /etc/ld.so.conf
 ldconfig
 
