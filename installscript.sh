@@ -105,7 +105,7 @@ make install
 
 #Creation des dossier
 su $user -c 'mkdir -p ~/watch ~/torrents ~/.session '
-mkdir /var/www/
+mkdir /var/www
 
 #Téléchargement + déplacement de rutorrent (web)
 svn checkout http://rutorrent.googlecode.com/svn/trunk/rutorrent/
