@@ -1,4 +1,4 @@
-##A ne pas installer pas pret
+## Debian compatible ubuntu a tester
 
 ## Installation
 
