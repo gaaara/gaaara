@@ -14,8 +14,8 @@ Todo List
 - cakebox light
 - plugin autodl-irssi
 
-Remerciment  pour l'aide apporter :) 
 
-- http://mondedie.fr/
-- http://www.wareziens.net/
-- ezseed de soyuka
+#### Inspirations & aide :) 
+- [Mon dedie](http://mondedie.fr/viewtopic.php?id=5302)
+- [ezseed](http://github.com/soyuka/ezseed2)
+- [wareziens](http://www.wareziens.net)
