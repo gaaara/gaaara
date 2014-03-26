@@ -442,9 +442,20 @@ mkdir /var/www/rutorrent/conf/users/$user
 cat <<'EOF' >   /var/www/rutorrent/conf/users/$user/config.php
 <?php
 $topDirectory = '/home/@user@';
-$scgi_port = 500{x};
+$scgi_port = 5001;
 $scgi_host = '127.0.0.1';
 $XMLRPCMountPoint = '/DAR0';
+$topDirectory = '/home/@user@/torrents';
+$pathToExternals = array(
+                "php"  => '/usr/bin/php',                       // Something like /usr/bin/php. If empty, will be found in PATH.
+                "curl" => '/usr/bin/curl',                      // Something like /usr/bin/curl. If empty, will be found in PATH.
+                "gzip" => '/bin/gzip',                  // Something like /usr/bin/gzip. If empty, will be found in PATH.
+                "id"   => '/usr/bin/id',                        // Something like /usr/bin/id. If empty, will be found in PATH.
+                "stat" => '/usr/bin/stat',                      // Something like /usr/bin/stat. If empty, will be found in PATH.
+                "bzip2" => '/bin/bzip2',
+
+        );
+?>
 EOF
 sed -i.bak "s/@user@/$user/g;" /var/www/rutorrent/conf/users/$user/config.php
 #########################################
