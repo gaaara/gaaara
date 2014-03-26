@@ -16,6 +16,6 @@ Todo List
 
 Remerciment  pour l'aide apporter :) 
 
-http://mondedie.fr/
-http://www.wareziens.net/
-ezseed de soyuka
+-http://mondedie.fr/
+-http://www.wareziens.net/
+-ezseed de soyuka
