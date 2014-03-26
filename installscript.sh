@@ -413,18 +413,10 @@ service nginx restart
 mkdir /var/www/rutorrent/conf/users/$user
 cat <<'EOF' >  /var/www/rutorrent/conf/users/$user/config.php
 <?php
-\$scgi_port = 0;
-\$scgi_host = "unix:///home/@user@/rtorrent/session/rpc.socket";
-\$XMLRPCMountPoint = "/RPC00001";
-\$pathToExternals = array(
-    "php"   => '',               
-    "curl"  => '/usr/bin/curl',  
-    "gzip"  => '',               
-    "id"    => '',               
-    "stat"  => '/usr/bin/stat',  
-);
-\$topDirectory = "/home/@user@";
-?>
+$topDirectory = '/home/@user@';
+$scgi_port = 5001;
+$scgi_host = '127.0.0.1';
+$XMLRPCMountPoint = '/DAR0';
 EOF
 sed -i.bak "s/@user@/$user/g;" /var/www/rutorrent/conf/users/$user/config.php
 
