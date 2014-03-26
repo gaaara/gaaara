@@ -105,8 +105,8 @@ make install
 
 #Creation des dossier
 mkdir /var/www
-su $user -c 'mkdir -p ~/downloads ~/uploads ~/incomplete ~/rtorrent ~/rtorrent/session'
-mkdir -p /usr/local/nginx /usr/local/nginx/ssl /usr/local/nginx/pw /etc/nginx/sites-enabled
+su $user -c 'mkdir -p ~/watch ~/torrents ~/.session '
+mkdir -p /usr/local/nginx /usr/local/nginx/ssl /usr/local/nginx/pw /etc/nginx/sites-enabled /var/www/
 touch /usr/local/nginx/pw/rutorrent_passwd
 
 
@@ -181,8 +181,7 @@ service php5-fpm restart
 rm /etc/nginx/nginx.conf
 
 cat <<'EOF' > /etc/nginx/nginx.conf
-
-user www-data www-data;
+user nginx;
 worker_processes auto;
 
 pid /var/run/nginx.pid;
@@ -216,6 +215,7 @@ http {
 }
 EOF
 touch /etc/nginx/sites-enabled/rutorrent.conf
+
 cat <<'EOF' > /etc/nginx/sites-enabled/rutorrent.conf
 server {
     listen 80 default_server;
@@ -224,8 +224,8 @@ server {
     index index.html index.php;
     charset utf-8;
 
-    ssl_certificate /usr/local/nginx/ssl/serv.crt;
-    ssl_certificate_key /usr/local/nginx/ssl/serv.key;
+    ssl_certificate /etc/nginx/ssl/server.crt;
+    ssl_certificate_key /etc/nginx/ssl/server.key;
 
     access_log /var/log/nginx/rutorrent-access.log combined;
     error_log /var/log/nginx/rutorrent-error.log error;
@@ -241,39 +241,108 @@ server {
         return 204;
     }
     
-    location ~ \.php$ {
-                try_files $uri =404;
+    ## début config rutorrent ##
 
-                fastcgi_pass php5-fpm-sock;
-                include fastcgi_params;
-                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-                fastcgi_intercept_errors on;
-                fastcgi_param HTTPS on;
-        }
-EOF
-cat <<'EOF' > /etc/nginx/conf.d/php-sock.conf
-upstream php5-fpm-sock {
-        server unix:/etc/phpcgi/php-cgi.socket;;
+    location ^~ /rutorrent {
+	root /var/www;
+	include /etc/nginx/conf.d/php;
+	include /etc/nginx/conf.d/cache;
+
+	location ~ /\.svn {
+		deny all;
+	}
+
+	location ~ /\.ht {
+		deny all;
+	}
+    }
+
+    location ^~ /rutorrent/conf/ {
+	deny all;
+    }
+
+    location ^~ /rutorrent/share/ {
+	deny all;
+    }
+    
+    ## fin config rutorrent ##
+
+    ## Début config cakebox 2.8 ##
+
+#    location ^~ /cakebox {
+#	root /var/www/;
+#	include /etc/nginx/conf.d/php;
+#	include /etc/nginx/conf.d/cache;
+#    }
+
+#    location /cakebox/downloads {
+#	root /var/www;
+#	satisfy any;
+#	allow all;
+#    }
+
+    ## fin config cakebox 2.8 ##
+
+    ## début config seedbox manager ##
+
+#    location ^~ / {
+#	root /var/www/manager;
+#	include /etc/nginx/conf.d/php;
+#	include /etc/nginx/conf.d/cache;
+#    }
+
+#    location ^~ /conf/ {
+#	root /var/www/manager;
+#	deny all;
+#    }
+
+    ## fin config seedbox manager ##
+
+EOF 
+cat <<'EOF' > /etc/nginx/conf.d/php
+location ~ \.php$ {
+	fastcgi_index index.php;
+	fastcgi_pass unix:/var/run/php5-fpm.sock;
+	fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+	include /etc/nginx/fastcgi_params;
 }
 EOF
-echo "include /usr/local/bin" >> /etc/ld.so.conf
-ldconfig
 
-#onfig dans php-fpm.conf
-echo "
-[www]
-listen = /etc/phpcgi/php-cgi.socket
-user = www-data
-group = www-data
-pm.max_children = 4096
-pm.start_servers = 4
-pm.min_spare_servers = 4
-pm.max_spare_servers = 128
-pm.max_requests = 4096
-" >> /etc/php5/fpm/php-fpm.conf
+cat <<'EOF' > /etc/nginx/conf.d/cache
+location ~* \.(jpg|jpeg|gif|css|png|js|woff|ttf|svg|eot)$ {
+    expires 7d;
+    access_log off;
+}
 
-mkdir /etc/phpcgi
+location ~* \.(eot|ttf|woff|svg)$ {
+    add_header Acccess-Control-Allow-Origin *;
+}
+EOF
 
+rm /etc/logrotate.d/nginx && touch /etc/logrotate.d/nginx
+cat <<'EOF' > /etc/logrotate.d/nginx
+/var/log/nginx/*.log {
+	daily
+	missingok
+	rotate 52
+	compress
+	delaycompress
+	notifempty
+	create 640 root
+	sharedscripts
+        postrotate
+                [ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
+        endscript
+}
+EOF
+
+echo "location /DAR0 {
+        include scgi_params;
+        scgi_pass 127.0.0.1:5001; #ou socket : unix:/home/username/.session/username.socket
+        auth_basic "seedbox";
+        auth_basic_user_file "/etc/nginx/passwd/rutorrent_passwd_@user@";
+    }">> /etc/nginx/sites-enabled/rutorrent.conf
+sed -i.bak "s/@user@/$user/g;" /etc/nginx/sites-enabled/rutorrent.conf
 ###########################################################
 ##             SSL Configuration                         ##
 ###########################################################
@@ -301,18 +370,26 @@ sed -i.bak "s/UsePAM/#UsePAM/g;" /etc/php5/fpm/php.ini
 sed -i.old -e "78i\Subsystem sftp internal-sftp" /etc/ssh/sshd_config
     
 cat <<'EOF' >  /home/$user/.rtorrent.rc
-execute = {sh,-c,rm -f /home/@user@/rtorrent/session/rpc.socket}
-scgi_local = /home/@user@/rtorrent/session/rpc.socket
-execute = {sh,-c,chmod 0666 /home/@user@/rtorrent/session/rpc.socket}
+scgi_port = 127.0.0.1:5001
 encoding_list = UTF-8
-system.umask.set = 022
-port_random = yes
+port_range = 45000-65000
+port_random = no
 check_hash = no
-directory = /home/@user@/incomplete
-session = /home/@user@/rtorrent/session
+directory = /home/@user@/torrents
+session = /home/@user@/.session
 encryption = allow_incoming, try_outgoing, enable_retry
-trackers.enable = 1
+schedule = watch_directory,1,1,"load_start=/home/@user@/watch/*.torrent"
+schedule = untied_directory,5,5,"stop_untied=/home/@user@/watch/*.torrent"
 use_udp_trackers = yes
+dht = off
+peer_exchange = no
+min_peers = 40
+max_peers = 100
+min_peers_seed = 10
+max_peers_seed = 50
+max_uploads = 15
+execute = {sh,-c,/usr/bin/php /var/www/rutorrent/php/initplugins.php @user@ &}
+schedule = espace_disque_insuffisant,1,30,close_low_diskspace=500M
 EOF
 sed -i.bak "s/@user@/$user/g;" /home/$user/.rtorrent.rc
 
