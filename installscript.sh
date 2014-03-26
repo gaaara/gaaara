@@ -418,11 +418,11 @@ chown root:$user /home/$user
 chmod 755 /home/$user
 ##user rtorrent.conf config
 echo "## user configuration
-location /DAR0 {
+location /usr01 {
         include scgi_params;
         scgi_pass 127.0.0.1:5001; #ou socket : unix:/home/username/.session/username.socket
         auth_basic seedbox;
-        auth_basic_user_file /etc/nginx/passwd/rutorrent_passwd_darky;
+        auth_basic_user_file /etc/nginx/passwd/rutorrent_passwd_$user;
     }
 }
 ">> /etc/nginx/sites-enabled/rutorrent.conf
@@ -444,7 +444,7 @@ cat <<'EOF' >   /var/www/rutorrent/conf/users/$user/config.php
 $topDirectory = '/home/@user@';
 $scgi_port = 5001;
 $scgi_host = '127.0.0.1';
-$XMLRPCMountPoint = '/DAR0';
+$XMLRPCMountPoint = '/usr01';
 $topDirectory = '/home/@user@/torrents';
 $pathToExternals = array(
                 "php"  => '/usr/bin/php',                       // Something like /usr/bin/php. If empty, will be found in PATH.
