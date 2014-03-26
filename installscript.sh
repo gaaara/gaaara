@@ -130,12 +130,6 @@ rm lbll-suite_0.8.1.tar.gz
 
 ##Filemanager
 svn co http://svn.rutorrent.org/svn/filemanager/trunk/filemanager
-sed -i "s#pathToExternals\['rar'\] = '';#pathToExternals\['rar'\] = '/usr/bin/rar';#" /var/www/rutorrent/plugins/filemanager/conf.php
-sed -i "s#pathToExternals\['zip'\] = '';#pathToExternals\['zip'\] = '/usr/bin/zip';#" /var/www/rutorrent/plugins/filemanager/conf.php
-sed -i "s#pathToExternals\['unzip'\] = '';#pathToExternals\['unzip'\] = '/usr/bin/unzip';#" /var/www/rutorrent/plugins/filemanager/conf.php
-sed -i "s#pathToExternals\['tar'\] = '';#pathToExternals\['tar'\] = '/bin/tar';#" /var/www/rutorrent/plugins/filemanager/conf.php
-sed -i "s#pathToExternals\['gzip'\] = '';#pathToExternals\['gzip'\] = '/bin/gzip';#" /var/www/rutorrent/plugins/filemanager/conf.php
-sed -i "s#pathToExternals\['bzip2'\] = '';#pathToExternals\['bzip2'\] = '/bin/bzip2';#" /var/www/rutorrent/plugins/filemanager/conf.php
 
 ##FILEUPLOAD
 svn co http://svn.rutorrent.org/svn/filemanager/trunk/fileupload
