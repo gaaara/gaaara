@@ -262,7 +262,7 @@ server {
     error_log /var/log/nginx/rutorrent-error.log error;
     
     error_page 500 502 503 504 /50x.html;
-    location = /50x.html { root /usr/share/nginx/html; }
+    location = /50x.html { root /var/www/; }
 
     auth_basic "seedbox";
     auth_basic_user_file "/etc/nginx/passwd/rutorrent_passwd";
@@ -417,13 +417,15 @@ chown -R $user:$user /home/$user
 chown root:$user /home/$user
 chmod 755 /home/$user
 ##user rtorrent.conf config
-echo "location /DAR0 {
+echo "## user configuration
+location /DAR0 {
         include scgi_params;
         scgi_pass 127.0.0.1:5001; #ou socket : unix:/home/username/.session/username.socket
         auth_basic "seedbox";
-        auth_basic_user_file "/etc/nginx/passwd/rutorrent_passwd_@user@";
-    }">> /etc/nginx/sites-enabled/rutorrent.conf
-sed -i.bak "s/@user@/$user/g;" /etc/nginx/sites-enabled/rutorrent.conf
+        auth_basic_user_file "/etc/nginx/passwd/rutorrent_passwd_$user";
+    }
+}
+">> /etc/nginx/sites-enabled/rutorrent.conf
 
 ###########################################################
 ##                    htpasswd                           ##
@@ -565,6 +567,7 @@ esac
  
 exit 0
 EOF
+sed -i.bak "s/@user@/$user/g;" /etc/init.d/$user-rtorrent
 chmod +x /etc/init.d/$user-rtorrent
 crontab -e
 * * * * * if ! ( ps -U $user | grep rtorrent > /dev/null ); then /etc/init.d/$user-rtorrent start; fi
