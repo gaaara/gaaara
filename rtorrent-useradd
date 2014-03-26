@@ -1,0 +1,104 @@
+if [ $(id -u) -ne 0 ]
+    then
+       echo
+       echo "This script must be run as root." 1>&2
+       echo
+       exit 1
+    fi
+
+    # demander nom et mot de passe
+    read -p "Adding user now, please type your user name: " user
+    read -s -p "Enter password: " pwd
+    echo
+
+    # ajout utilisateur
+    useradd -m  -s /bin/bash "$user"
+
+    # creation du mot de passe pour cet utilisateur
+    echo "${user}:${pwd}" | chpasswd
+
+    echo "entrer un port non utiliser des autre utilisateur exemple 5003"
+    read -p  "entrer le port du nouvelle utilisateur: " port
+    echo "entrer le id cest a dire lutilisater 2 ou 3 etc "
+    read -p  "entrer le id utilisateur: " usrid
+    
+    ##Creation de dossier 
+    su $user -c 'mkdir -p ~/watch ~/torrents ~/.session '
+    
+#########################################
+##     .rtorrent.rc conf               ##
+#########################################
+cat <<'EOF' >  /home/$user/.rtorrent.rc
+scgi_port = 127.0.0.1:5001
+encoding_list = UTF-8
+port_range = 45000-65000
+port_random = no
+check_hash = no
+directory = /home/@user@/torrents
+session = /home/@user@/.session
+encryption = allow_incoming, try_outgoing, enable_retry
+schedule = watch_directory,1,1,"load_start=/home/@user@/watch/*.torrent"
+schedule = untied_directory,5,5,"stop_untied=/home/@user@/watch/*.torrent"
+use_udp_trackers = yes
+dht = off
+peer_exchange = no
+min_peers = 40
+max_peers = 100
+min_peers_seed = 10
+max_peers_seed = 50
+max_uploads = 15
+execute = {sh,-c,/usr/bin/php /var/www/rutorrent/php/initplugins.php @user@ &}
+schedule = espace_disque_insuffisant,1,30,close_low_diskspace=500M
+EOF
+sed -i.bak "s/@user@/$user/g;" /home/$user/.rtorrent.rc
+#########################################
+##     .rtorrent.rc conf Fin           ##
+#########################################
+
+##user rtorrent.conf config
+echo "## user configuration
+location /usr01 {
+        include scgi_params;
+        scgi_pass 127.0.0.1:5001; #ou socket : unix:/home/username/.session/username.socket
+        auth_basic seedbox;
+        auth_basic_user_file /etc/nginx/passwd/rutorrent_passwd_$user;
+    }
+}
+">> /etc/nginx/sites-enabled/rutorrent.conf
+
+###########################################################
+##                    htpasswd                           ##
+###########################################################
+python /root/gaaara/htpasswd.py -b /etc/nginx/passwd/rutorrent_passwd $user ${pwd}
+chmod 640 /etc/nginx/passwd/*
+chown -c nginx:nginx /etc/nginx/passwd/*
+service nginx restart
+###########################################################
+##                    htpasswd                           ##
+###########################################################
+mkdir /var/www/rutorrent/conf/users/$user
+##config.php
+cat <<'EOF' >   /var/www/rutorrent/conf/users/$user/config.php
+<?php
+$topDirectory = '/home/@user@';
+$scgi_port = 5001;
+$scgi_host = '127.0.0.1';
+$XMLRPCMountPoint = '/usr01';
+$topDirectory = '/home/@user@/torrents';
+$pathToExternals = array(
+                "php"  => '/usr/bin/php',                       // Something like /usr/bin/php. If empty, will be found in PATH.
+                "curl" => '/usr/bin/curl',                      // Something like /usr/bin/curl. If empty, will be found in PATH.
+                "gzip" => '/bin/gzip',                  // Something like /usr/bin/gzip. If empty, will be found in PATH.
+                "id"   => '/usr/bin/id',                        // Something like /usr/bin/id. If empty, will be found in PATH.
+                "stat" => '/usr/bin/stat',                      // Something like /usr/bin/stat. If empty, will be found in PATH.
+                "bzip2" => '/bin/bzip2',
+
+        );
+?>
+EOF
+sed -i.bak "s/@user@/$user/g;" /var/www/rutorrent/conf/users/$user/config.php
+
+#permission
+chown -R www-data:www-data /var/www/rutorrent
+
+exit0
