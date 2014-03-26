@@ -421,9 +421,11 @@ echo "## user configuration
 location /DAR0 {
         include scgi_params;
         scgi_pass 127.0.0.1:5001; #ou socket : unix:/home/username/.session/username.socket
-        auth_basic "seedbox";
-        auth_basic_user_file "/etc/nginx/passwd/rutorrent_passwd_$user";
-    } ">> /etc/nginx/sites-enabled/rutorrent.conf
+        auth_basic seedbox;
+        auth_basic_user_file /etc/nginx/passwd/rutorrent_passwd_darky;
+    }
+}
+">> /etc/nginx/sites-enabled/rutorrent.conf
 
 ###########################################################
 ##                    htpasswd                           ##
