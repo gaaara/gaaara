@@ -604,6 +604,7 @@ sed -i.bak "s/@user@/$user/g;" /etc/init.d/$user-rtorrent
 #Configuration rtorrent deamon
 chmod +x /etc/init.d/$user-rtorrent
 crontab -e
+* * * * * if ! ( ps -U $user | grep rtorrent > /dev/null ); then /etc/init.d/$user-rtorrent start; fi
 #########################################
 ##     rtorrent demon fin              ##
 #########################################
