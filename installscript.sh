@@ -418,8 +418,7 @@ location /usr01 {
         auth_basic seedbox;
         auth_basic_user_file /etc/nginx/passwd/rutorrent_passwd_$user;
     }
-}
-">> /etc/nginx/sites-enabled/rutorrent.conf
+}">> /etc/nginx/sites-enabled/rutorrent.conf
 
 ###########################################################
 ##                    htpasswd                           ##
