@@ -114,16 +114,16 @@ cat <<'EOF' > /etc/init.d/$user-rtorrent
 # Description:           Start-Stop rtorrent user session
 ### END INIT INFO
  
-user="<username>"
+user="@user@"
  
 # the full path to the filename where you store your rtorrent configuration
-config="/home/<username>/.rtorrent.rc"
+config="/home/@user@/.rtorrent.rc"
  
 # set of options to run with
 options=""
  
 # default directory for screen, needs to be an absolute path
-base="/home/<username>"
+base="/home/@user@"
  
 # name of screen session
 srnname="rtorrent"
@@ -222,6 +222,7 @@ sed -i.bak "s/@user@/$user/g;" /etc/init.d/$user-rtorrent
 #Configuration rtorrent deamon
 chmod +x /etc/init.d/$user-rtorrent
 crontab -e
+* * * * * if ! ( ps -U $user | grep rtorrent > /dev/null ); then /etc/init.d/$user-rtorrent start; fi
 #########################################
 ##     rtorrent demon fin              ##
 #########################################
