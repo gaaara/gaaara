@@ -249,7 +249,7 @@ EOF
 sed -i.bak "s/@user@/$user/g;" /etc/init.d/$user-rtorrent
 #Configuration rtorrent deamon
 chmod +x /etc/init.d/$user-rtorrent
-update-rc.d $user-rtorrent defaults
+crontab -e
 #########################################
 ##     rtorrent demon fin              ##
 #########################################
