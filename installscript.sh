@@ -604,10 +604,259 @@ sed -i.bak "s/@user@/$user/g;" /etc/init.d/$user-rtorrent
 #Configuration rtorrent deamon
 chmod +x /etc/init.d/$user-rtorrent
 crontab -e
+#########################################
+##     rtorrent demon fin              ##
+#########################################
+#########################################
+##     useradd                         ##
+#########################################
+
+cat <<'EOF' > /etc/init.d/rtorrent-useradd
+### BEGIN INIT INFO
+# Provides: chillispot et freeradius dans le chroot
+# Required-Start: $local_fs $network
+# Required-Stop: $local_fs $remote_fs
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Wireless & LAN Access Point Controller
+# Description: ChilliSpot is an open source captive portal
+# or wireless LAN access point controller.
+### END INIT INFO
+if [ $(id -u) -ne 0 ]
+    then
+       echo
+       echo "This script must be run as root." 1>&2
+       echo
+       exit 1
+    fi
+
+    # demander nom et mot de passe
+    read -p "Adding user now, please type your user name: " user
+    read -s -p "Enter password: " pwd
+    echo
+
+    # ajout utilisateur
+    useradd -m  -s /bin/bash "$user"
+
+    # creation du mot de passe pour cet utilisateur
+    echo "${user}:${pwd}" | chpasswd
+
+    echo "entrer un port non utiliser des autre utilisateur exemple 5003"
+    read -p  "entrer le port du nouvelle utilisateur: " port
+    echo "entrer le id cest a dire lutilisater 2 ou 3 etc "
+    read -p  "entrer le id utilisateur: " usrid
+    
+    ##Creation de dossier 
+    su $user -c 'mkdir -p ~/watch ~/torrents ~/.session '
+    
+#########################################
+##     .rtorrent.rc conf               ##
+#########################################
+cat <<'EOF' >  /home/$user/.rtorrent.rc
+scgi_port = 127.0.0.1:@port@
+encoding_list = UTF-8
+port_range = 45000-65000
+port_random = no
+check_hash = no
+directory = /home/@user@/torrents
+session = /home/@user@/.session
+encryption = allow_incoming, try_outgoing, enable_retry
+schedule = watch_directory,1,1,"load_start=/home/@user@/watch/*.torrent"
+schedule = untied_directory,5,5,"stop_untied=/home/@user@/watch/*.torrent"
+use_udp_trackers = yes
+dht = off
+peer_exchange = no
+min_peers = 40
+max_peers = 100
+min_peers_seed = 10
+max_peers_seed = 50
+max_uploads = 15
+execute = {sh,-c,/usr/bin/php /var/www/rutorrent/php/initplugins.php @user@ &}
+schedule = espace_disque_insuffisant,1,30,close_low_diskspace=500M
+EOF
+sed -i.bak "s/@user@/$user/g;" /home/$user/.rtorrent.rc
+sed -i.bak "s/@port@/$port/g;" /home/$user/.rtorrent.rc
+#########################################
+##     .rtorrent.rc conf Fin           ##
+#########################################
+
+##user rtorrent.conf config
+sed -i '$d' /etc/nginx/sites-enabled/rutorrent.conf
+echo "## user configuration
+location /usr$usrid {
+        include scgi_params;
+        scgi_pass 127.0.0.1:$port; #ou socket : unix:/home/username/.session/username.socket
+        auth_basic seedbox;
+        auth_basic_user_file /etc/nginx/passwd/rutorrent_passwd_$user;
+    }">> /etc/nginx/sites-enabled/rutorrent.conf
+echo "}" >>/etc/nginx/sites-enabled/rutorrent.conf
+###########################################################
+##                    htpasswd                           ##
+###########################################################
+python /root/gaaara/htpasswd.py -b /etc/nginx/passwd/rutorrent_passwd $user ${pwd}
+chmod 640 /etc/nginx/passwd/*
+chown -c nginx:nginx /etc/nginx/passwd/*
+service nginx restart
+###########################################################
+##                    htpasswd                           ##
+###########################################################
+mkdir /var/www/rutorrent/conf/users/$user
+##config.php
+cat <<'EOF' >   /var/www/rutorrent/conf/users/$user/config.php
+<?php
+$topDirectory = '/home/@user@';
+$scgi_port = @port@;
+$scgi_host = '127.0.0.1';
+$XMLRPCMountPoint = '/usr@id@';
+$topDirectory = '/home/@user@/torrents';
+$pathToExternals = array(
+                "curl" => '/usr/bin/curl',              
+
+        );
+?>
+EOF
+sed -i.bak "s/@user@/$user/g;" /var/www/rutorrent/conf/users/$user/config.php
+sed -i.bak "s/@id@/$usrid/g;" /var/www/rutorrent/conf/users/$user/config.php
+sed -i.bak "s/@port@/$port/g;" /var/www/rutorrent/conf/users/$user/config.php
+#permission
+chown -R www-data:www-data /var/www/rutorrent
+
+#########################################
+##     rtorrent demon                  ##
+#########################################
+
+cat <<'EOF' > /etc/init.d/$user-rtorrent
+#!/bin/bash
+ 
+### BEGIN INIT INFO
+# Provides:                rtorrent
+# Required-Start:       
+# Required-Stop:       
+# Default-Start:          2 3 4 5
+# Default-Stop:          0 1 6
+# Short-Description:  Start daemon at boot time
+# Description:           Start-Stop rtorrent user session
+### END INIT INFO
+ 
+user="@user@"
+ 
+# the full path to the filename where you store your rtorrent configuration
+config="/home/@user@/.rtorrent.rc"
+ 
+# set of options to run with
+options=""
+ 
+# default directory for screen, needs to be an absolute path
+base="/home/@user@"
+ 
+# name of screen session
+srnname="rtorrent"
+ 
+# file to log to (makes for easier debugging if something goes wrong)
+logfile="/var/log/rtorrentInit.log"
+#######################
+###END CONFIGURATION###
+#######################
+PATH=/usr/bin:/usr/local/bin:/usr/local/sbin:/sbin:/bin:/usr/sbin
+DESC="rtorrent"
+NAME=rtorrent
+DAEMON=$NAME
+SCRIPTNAME=/etc/init.d/$NAME
+ 
+checkcnfg() {
+    exists=0
+    for i in `echo "$PATH" | tr ':' '\n'` ; do
+        if [ -f $i/$NAME ] ; then
+            exists=1
+            break
+        fi
+    done
+    if [ $exists -eq 0 ] ; then
+        echo "cannot find rtorrent binary in PATH $PATH" | tee -a "$logfile" >&2
+        exit 3
+    fi
+    if ! [ -r "${config}" ] ; then
+        echo "cannot find readable config ${config}. check that it is there and permissions are appropriate" | tee -a "$logfile" >&2
+        exit 3
+    fi
+    session=`getsession "$config"`
+    if ! [ -d "${session}" ] ; then
+        echo "cannot find readable session directory ${session} from config ${config}. check permissions" | tee -a "$logfile" >&2
+        exit 3
+ 
+        fi
+ 
+}
+ 
+d_start() {
+ 
+  [ -d "${base}" ] && cd "${base}"
+ 
+  stty stop undef && stty start undef
+  su -c "screen -ls | grep -sq "\.${srnname}[[:space:]]" " ${user} || su -c "screen -dm -S ${srnname} 2>&1 1>/dev/null" ${user} | tee -a "$logfile" >&2
+  su -c "screen -S "${srnname}" -X screen rtorrent ${options} 2>&1 1>/dev/null" ${user} | tee -a "$logfile" >&2
+}
+ 
+d_stop() {
+    session=`getsession "$config"`
+    if ! [ -s ${session}/rtorrent.lock ] ; then
+        return
+    fi
+    pid=`cat ${session}/rtorrent.lock | awk -F: '{print($2)}' | sed "s/[^0-9]//g"`
+    if ps -A | grep -sq ${pid}.*rtorrent ; then # make sure the pid doesn't belong to another process
+        kill -s INT ${pid}
+    fi
+}
+ 
+getsession() {
+    session=`cat "$1" | grep "^[[:space:]]*session[[:space:]]*=" | sed "s/^[[:space:]]*session[[:space:]]*=[[:space:]]*//" `
+    echo $session
+}
+ 
+checkcnfg
+ 
+case "$1" in
+  start)
+    echo -n "Starting $DESC: $NAME"
+    d_start
+    echo "."
+    ;;
+  stop)
+    echo -n "Stopping $DESC: $NAME"
+    d_stop
+    echo "."
+    ;;
+  restart|force-reload)
+    echo -n "Restarting $DESC: $NAME"
+    d_stop
+    sleep 1
+    d_start
+    echo "."
+    ;;
+  *)
+    echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+    exit 1
+    ;;
+esac
+ 
+exit 0
+EOF
+
+sed -i.bak "s/@user@/$user/g;" /etc/init.d/$user-rtorrent
+#Configuration rtorrent deamon
+chmod +x /etc/init.d/$user-rtorrent
+crontab -e
 * * * * * if ! ( ps -U $user | grep rtorrent > /dev/null ); then /etc/init.d/$user-rtorrent start; fi
 #########################################
 ##     rtorrent demon fin              ##
 #########################################
+EOF
+chmod +x /etc/init.d/rtorrent-useradd
+#########################################
+##     useradd  fin                    ##
+#########################################
+
+
 clear
 
 # Demarrage de rtorrent
