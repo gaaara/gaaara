@@ -482,127 +482,75 @@ sed -i.bak "s/@user@/$user/g;" /var/www/rutorrent/conf/users/$user/config.php
 #########################################
 ##     rtorrent demon                  ##
 #########################################
+cat <<'EOF' > /etc/init.d/$user-rtorrent
+#!/bin/sh -e
+# Start/Stop rtorrent sous forme de daemon.
 
-cat <<'EOF' >  /etc/init.d/$user-rtorrent
-#!/bin/bash
- 
-### BEGIN INIT INFO
-# Provides:                rtorrent
-# Required-Start:       
-# Required-Stop:       
-# Default-Start:          2 3 4 5
-# Default-Stop:          0 1 6
-# Short-Description:  Start daemon at boot time
-# Description:           Start-Stop rtorrent user session
-### END INIT INFO
- 
-user="@user@"
- 
-# the full path to the filename where you store your rtorrent configuration
-config="/home/@user@/.rtorrent.rc"
- 
-# set of options to run with
-options=""
- 
-# default directory for screen, needs to be an absolute path
-base="/home/@user@"
- 
-# name of screen session
-srnname="rtorrent"
- 
-# file to log to (makes for easier debugging if something goes wrong)
-logfile="/var/log/rtorrentInit.log"
-#######################
-###END CONFIGURATION###
-#######################
-PATH=/usr/bin:/usr/local/bin:/usr/local/sbin:/sbin:/bin:/usr/sbin
-DESC="rtorrent"
 NAME=rtorrent
-DAEMON=$NAME
 SCRIPTNAME=/etc/init.d/$NAME
- 
-checkcnfg() {
-    exists=0
-    for i in `echo "$PATH" | tr ':' '\n'` ; do
-        if [ -f $i/$NAME ] ; then
-            exists=1
-            break
-        fi
-    done
-    if [ $exists -eq 0 ] ; then
-        echo "cannot find rtorrent binary in PATH $PATH" | tee -a "$logfile" >&2
-        exit 3
-    fi
-    if ! [ -r "${config}" ] ; then
-        echo "cannot find readable config ${config}. check that it is there and permissions are appropriate" | tee -a "$logfile" >&2
-        exit 3
-    fi
-    session=`getsession "$config"`
-    if ! [ -d "${session}" ] ; then
-        echo "cannot find readable session directory ${session} from config ${config}. check permissions" | tee -a "$logfile" >&2
-        exit 3
- 
-        fi
- 
-}
- 
-d_start() {
- 
-  [ -d "${base}" ] && cd "${base}"
- 
-  stty stop undef && stty start undef
-  su -c "screen -ls | grep -sq "\.${srnname}[[:space:]]" " ${user} || su -c "screen -dm -S ${srnname} 2>&1 1>/dev/null" ${user} | tee -a "$logfile" >&2
-  su -c "screen -S "${srnname}" -X screen rtorrent ${options} 2>&1 1>/dev/null" ${user} | tee -a "$logfile" >&2
-}
- 
-d_stop() {
-    session=`getsession "$config"`
-    if ! [ -s ${session}/rtorrent.lock ] ; then
-        return
-    fi
-    pid=`cat ${session}/rtorrent.lock | awk -F: '{print($2)}' | sed "s/[^0-9]//g"`
-    if ps -A | grep -sq ${pid}.*rtorrent ; then # make sure the pid doesn't belong to another process
-        kill -s INT ${pid}
-    fi
-}
- 
-getsession() {
-    session=`cat "$1" | grep "^[[:space:]]*session[[:space:]]*=" | sed "s/^[[:space:]]*session[[:space:]]*=[[:space:]]*//" `
-    echo $session
-}
- 
-checkcnfg
- 
-case "$1" in
-  start)
-    echo -n "Starting $DESC: $NAME"
-    d_start
-    echo "."
-    ;;
-  stop)
-    echo -n "Stopping $DESC: $NAME"
-    d_stop
-    echo "."
-    ;;
-  restart|force-reload)
-    echo -n "Restarting $DESC: $NAME"
-    d_stop
-    sleep 1
-    d_start
-    echo "."
-    ;;
-  *)
-    echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
-    exit 1
-    ;;
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+case $1 in
+        start)
+                echo "Starting rtorrent... "
+                su -l @user@ -c "screen -fn -dmS rtd nice -19 rtorrent"
+                echo "Terminated"
+        ;;
+        stop)
+                if [ "$(ps aux | grep -e '.*rtorrent$' -c)" != 0  ]; then
+                {
+                        echo "Shutting down rtorrent... "
+                        killall -r "^.*rtorrent$"
+                        echo "Terminated"
+                }
+                else
+                {
+                        echo "rtorrent not yet started !"
+                        echo "Terminated"
+                }
+                fi
+        ;;
+        restart)
+                if [ "$(ps aux | grep -e '.*rtorrent$' -c)" != 0  ]; then
+                {
+                        echo "Shutting down rtorrent... "
+                        killall -r "^.*rtorrent$"
+                        echo "Starting rtorrent... "
+                        su -l @user@ -c "screen -fn -dmS rtd nice -19 rtorrent"
+                        echo "Terminated"
+                }
+                else
+                {
+                        echo "rtorrent not yet started !"
+                        echo "Starting rtorrent... "
+                        su -l @user@ -c "screen -fn -dmS rtd nice -19 rtorrent"
+                        echo "Terminated"
+                }
+                fi
+        ;;
+        *)
+                echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+                exit 2
+        ;;
 esac
- 
-exit 0
 EOF
-sed -i.bak "s/@user@/$user/g;" /etc/init.d/$user-rtorrent
-chmod +x /etc/init.d/$user-rtorrent
-crontab -e
-* * * * * if ! ( ps -U $user | grep rtorrent > /dev/null ); then /etc/init.d/$user-rtorrent start; fi
+
+sed -i.bak "s/@user@/$user/g;" /etc/init.d/rtorrent
+#Configuration rtorrent deamon
+chmod +x /etc/init.d/rtorrent
+update-rc.d rtorrent defaults 99
 #########################################
 ##     rtorrent demon fin              ##
 #########################################
+clear
+
+# Demarrage de rtorrent
+$user-rtorrent start
+echo "--"
+echo " =========== FIN DE L'INSTALLATION ! On dirait que tout a fonctionne ! ==="
+echo "Username :$user"
+echo "Password :${pwd}"
+echo "-------------------------------"
+echo "-------------------------------"
+echo "Maintenant, rendez-vous sur Rutorrent"
+echo "https://$ip/rutorrent/"
