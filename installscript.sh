@@ -130,6 +130,36 @@ rm lbll-suite_0.8.1.tar.gz
 
 ##Filemanager
 svn co http://svn.rutorrent.org/svn/filemanager/trunk/filemanager
+#######################
+# filemanager  config #       
+#######################
+<?php
+cat <<'EOF' >  /var/www/rutorrent/plugins/filemanager/conf.php
+$fm['tempdir'] = '/tmp';                // path were to store temporary data ; must be writable
+$fm['mkdperm'] = 755;           // default permission to set to new created directories
+
+// set with fullpath to binary or leave empty
+$pathToExternals['rar'] = '/usr/bin/rar';
+$pathToExternals['zip'] = '/usr/bin/zip';
+$pathToExternals['unzip'] = '/usr/bin/unzip';
+$pathToExternals['tar'] = '/bin/tar';
+$pathToExternals['gzip'] = '/bin/gzip';
+$pathToExternals['bzip2'] = '/bin/bzip2';
+
+// archive mangling, see archiver man page before editing
+
+$fm['archive']['types'] = array('rar', 'zip', 'tar', 'gzip', 'bzip2');
+
+
+
+
+$fm['archive']['compress'][0] = range(0, 5);
+$fm['archive']['compress'][1] = array('-0', '-1', '-9');
+$fm['archive']['compress'][2] = $fm['archive']['compress'][3] = $fm['archive']['compress'][4] = array(0);
+EOF
+#######################
+# filemanager  config #       
+#######################
 
 ##FILEUPLOAD
 svn co http://svn.rutorrent.org/svn/filemanager/trunk/fileupload
@@ -440,13 +470,8 @@ $scgi_host = '127.0.0.1';
 $XMLRPCMountPoint = '/usr01';
 $topDirectory = '/home/@user@/torrents';
 $pathToExternals = array(
-                "php"  => '/usr/bin/php',                       // Something like /usr/bin/php. If empty, will be found in PATH.
-                "curl" => '/usr/bin/curl',                      // Something like /usr/bin/curl. If empty, will be found in PATH.
-                "gzip" => '/bin/gzip',                  // Something like /usr/bin/gzip. If empty, will be found in PATH.
-                "id"   => '/usr/bin/id',                        // Something like /usr/bin/id. If empty, will be found in PATH.
-                "stat" => '/usr/bin/stat',                      // Something like /usr/bin/stat. If empty, will be found in PATH.
-                "bzip2" => '/bin/bzip2',
-
+           
+                "curl" => '/usr/bin/curl',
         );
 ?>
 EOF
