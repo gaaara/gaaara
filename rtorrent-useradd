@@ -86,12 +86,7 @@ $scgi_host = '127.0.0.1';
 $XMLRPCMountPoint = '/usr@id@';
 $topDirectory = '/home/@user@/torrents';
 $pathToExternals = array(
-                "php"  => '/usr/bin/php',                       // Something like /usr/bin/php. If empty, will be found in PATH.
-                "curl" => '/usr/bin/curl',                      // Something like /usr/bin/curl. If empty, will be found in PATH.
-                "gzip" => '/bin/gzip',                  // Something like /usr/bin/gzip. If empty, will be found in PATH.
-                "id"   => '/usr/bin/id',                        // Something like /usr/bin/id. If empty, will be found in PATH.
-                "stat" => '/usr/bin/stat',                      // Something like /usr/bin/stat. If empty, will be found in PATH.
-                "bzip2" => '/bin/bzip2',
+                "curl" => '/usr/bin/curl',              
 
         );
 ?>
