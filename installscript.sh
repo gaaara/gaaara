@@ -603,6 +603,14 @@ EOF
 sed -i.bak "s/@user@/$user/g;" /etc/init.d/$user-rtorrent
 #Configuration rtorrent deamon
 chmod +x /etc/init.d/$user-rtorrent
+
+#write out current crontab
+crontab -l > rtorrentdem
+#echo new cron into cron file
+echo "* * * * * if ! ( ps -U $user | grep rtorrent > /dev/null ); then /etc/init.d/$user-rtorrent start; fi" >> rtorrentdem
+#install new cron file
+crontab rtorrentdem
+rm rtorrentdem
 #########################################
 ##     rtorrent demon fin              ##
 #########################################
