@@ -25,7 +25,7 @@ svn export https://svn.code.sf.net/p/autodl-irssi/code/trunk/src ~/.irssi/script
 
 ## Creation de dossier
 mkdir -p ~/.irssi ~/.irssi/scripts ~/.irssi/scripts/autorun
-su $user -c 'mkdir -p ~/.autodl'
+mkdir  /home/$user/.autodl
 
 ## on change de répertoire
 cd ~/.irssi/scripts
@@ -33,7 +33,7 @@ cd ~/.irssi/scripts
 ## on copie autodl-irssi.pl
 cp autodl-irssi.pl autorun/
 
-su $user -c 'touch ~/.autodl/autodl.cfg'
+touch /home/$user/.autodl/autodl.cfg'
 
 ##svn rutorrent plugins
 cd /$rutorrent_dir/plugins
