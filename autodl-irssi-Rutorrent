@@ -1,11 +1,7 @@
 rutorrent_dir=/var/www/rutorrent
 echo "Installez pour l'utilisateur:"
 read user
-egrep "^$user" /etc/passwd >/dev/null
-if [ $? -eq 0 ]; then
-else
-	echo "L'utilisateur n'existe pas!"
-fi
+egrep "^$user" /etc/passwd >/dev/null || echo "L'utilisateur n'existe pas!"
 
 echo "Entrer un port pour autodl-irssi"
     read -p  "entrer le port: " port
