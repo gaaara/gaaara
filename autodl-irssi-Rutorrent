@@ -19,19 +19,24 @@ fi
 $packetg update
 $packetg safe-upgrade -y
 $packetg install -y install libarchive-zip-perl libnet-ssleay-perl libhtml-parser-perl libxml-libxml-perl libdigest-sha-perl  libjson-perl libjson-xs-perl libxml-libxslt-perl
+
 ## svn autodl-irssi
 svn export https://svn.code.sf.net/p/autodl-irssi/code/trunk/src ~/.irssi/scripts
+
 ## Creation de dossier
 mkdir -p ~/.irssi ~/.irssi/scripts ~/.irssi/scripts/autorun
 su $user -c 'mkdir -p ~/.autodl'
+
 ## on change de répertoire
-cd /.irssi/scripts
+cd ~/.irssi/scripts
+
 ## on copie autodl-irssi.pl
 cp autodl-irssi.pl autorun/
 
-su $USER -c 'touch ~/.autodl/autodl.cfg'
+su $user -c 'touch ~/.autodl/autodl.cfg'
 
 ##svn rutorrent plugins
+cd /$rutorrent_dir/plugins
 svn co https://svn.code.sf.net/p/autodl-irssi/code/trunk/rutorrent/autodl-irssi
 
 if [ -d "$rutorrent_dir/conf/users/$user/plugins" ]
