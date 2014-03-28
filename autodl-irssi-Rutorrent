@@ -1,3 +1,4 @@
+#!/bin/bash
 rutorrent_dir=/var/www/rutorrent
 echo "Installez pour l'utilisateur:"
 read user
