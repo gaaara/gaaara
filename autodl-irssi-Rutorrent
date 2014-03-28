@@ -19,15 +19,21 @@ fi
 $packetg update
 $packetg safe-upgrade -y
 $packetg install -y install libarchive-zip-perl libnet-ssleay-perl libhtml-parser-perl libxml-libxml-perl libdigest-sha-perl  libjson-perl libjson-xs-perl libxml-libxslt-perl
-
+## svn autodl-irssi
+svn export https://svn.code.sf.net/p/autodl-irssi/code/trunk/src ~/.irssi/scripts
+## Creation de dossier
 mkdir -p ~/.irssi ~/.irssi/scripts ~/.irssi/scripts/autorun
 su $user -c 'mkdir -p ~/.autodl'
-
-svn export https://svn.code.sf.net/p/autodl-irssi/code/trunk/src ~/.irssi/scripts
-cd ~/.irssi/scripts
+## on change de répertoire
+cd /.irssi/scripts
+## on copie autodl-irssi.pl
 cp autodl-irssi.pl autorun/
-touch ~/.autodl/autodl.cfg
+
+su $USER -c 'touch ~/.autodl/autodl.cfg'
+
+##svn rutorrent plugins
 svn co https://svn.code.sf.net/p/autodl-irssi/code/trunk/rutorrent/autodl-irssi
+
 if [ -d "$rutorrent_dir/conf/users/$user/plugins" ]
 then
 	mkdir $rutorrent_dir/conf/users/$user/plugins/autodl-irssi
@@ -35,15 +41,27 @@ else
 	mkdir $rutorrent_dir/conf/users/$user/plugins
 	mkdir $rutorrent_dir/conf/users/$user/plugins/autodl-irssi
 fi
+##on donne les permission
 chown -R www-data:www-data autodl-irssi
 
-echo "[options]" > /home/$user/.autodl/autodl.cfg
-echo "gui-server-port = $port" >> /home/$user/.autodl/autodl.cfg
-echo "gui-server-password = $pw" >> /home/$user/.autodl/autodl.cfg
+##fichier configuration user conf.php
+cat <<'EOF' > $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
+<?php
 
-echo "<?php" > $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
-echo "$autodlPort = $port;" >> $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
-echo "$autodlPassword = \"$pw\";" >> $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
-echo "?>" >> $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
+$autodlPort = @port@;
+$autodlPassword = "@pw@";
 
+?>
+EOF
+sed -i.bak "s/@port@/$port/g;" $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
+sed -i.bak "s/@pw@/$pw/g;" $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
+
+## Fichier configuration autodl.cfg
+cat <<'EOF' > /home/$user/.autodl/autodl.cfg
+options]
+gui-server-port = @port@
+gui-server-password = @pw@
+EOF
+sed -i.bak "s/@port@/$port/g;" /home/$user/.autodl/autodl.cfg
+sed -i.bak "s/@pw@/$pw/g;" /home/$user/.autodl/autodl.cfg
 
