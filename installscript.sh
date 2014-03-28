@@ -607,7 +607,7 @@ chmod +x /etc/init.d/$user-rtorrent
 #write out current crontab
 crontab -l > rtorrentdem
 #echo new cron into cron file
-echo "* * * * * if ! ( ps -U $user | grep rtorrent > /dev/null ); then /etc/init.d/$user-rtorrent start; fi" >> rtorrentdem
+echo "@reboot /etc/init.d/$user-rtorrent start" >> rtorrentdem
 #install new cron file
 crontab rtorrentdem
 rm rtorrentdem
