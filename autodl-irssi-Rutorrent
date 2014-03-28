@@ -21,25 +21,23 @@ $packetg update
 $packetg safe-upgrade -y
 $packetg install -y irssi libarchive-zip-perl libnet-ssleay-perl libhtml-parser-perl libxml-libxml-perl libdigest-sha-perl  libjson-perl libjson-xs-perl libxml-libxslt-perl
 
+chown -R $user:$user /home/$user
+chown root:$user /home/$user
+chmod 755 /home/$user
+
+cd /home/$user
+mkdir -p .irssi
+cd .irssi
 ## svn autodl-irssi
-svn export https://svn.code.sf.net/p/autodl-irssi/code/trunk/src ~/.irssi/scripts
+svn export https://svn.code.sf.net/p/autodl-irssi/code/trunk/src scripts
+mkdir scripts/autorun/
+cp scripts/autodl-irssi.pl scripts/autorun/
+mkdir -p /home/$user/.autodl
+touch /home/$user/.autodl/autodl.cfg
 
-## Creation de dossier
-mkdir -p ~/.irssi ~/.irssi/scripts ~/.irssi/scripts/autorun
-mkdir  /home/$user/.autodl
-
-## on change de répertoire
-cd ~/.irssi/scripts
-
-## on copie autodl-irssi.pl
-cp autodl-irssi.pl autorun/
-
-touch /home/$user/.autodl/autodl.cfg'
-
-##svn rutorrent plugins
-cd /$rutorrent_dir/plugins
+cd /var/www/rutorrent/plugins
 svn co https://svn.code.sf.net/p/autodl-irssi/code/trunk/rutorrent/autodl-irssi
-
+chown -R www-data:www-data autodl-irssi
 if [ -d "$rutorrent_dir/conf/users/$user/plugins" ]
 then
 	mkdir $rutorrent_dir/conf/users/$user/plugins/autodl-irssi
@@ -48,7 +46,7 @@ else
 	mkdir $rutorrent_dir/conf/users/$user/plugins/autodl-irssi
 fi
 ##on donne les permission
-chown -R www-data:www-data autodl-irssi
+
 
 ##fichier configuration user conf.php
 cat <<'EOF' > $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
