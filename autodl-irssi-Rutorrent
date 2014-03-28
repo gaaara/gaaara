@@ -57,6 +57,7 @@ $autodlPassword = "@pw@";
 
 ?>
 EOF
+
 sed -i.bak "s/@port@/$port/g;" $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
 sed -i.bak "s/@pw@/$pw/g;" $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
 
@@ -66,6 +67,7 @@ options]
 gui-server-port = @port@
 gui-server-password = @pw@
 EOF
+
 sed -i.bak "s/@port@/$port/g;" /home/$user/.autodl/autodl.cfg
 sed -i.bak "s/@pw@/$pw/g;" /home/$user/.autodl/autodl.cfg
 
