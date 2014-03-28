@@ -1,0 +1,54 @@
+rutorrent_dir=/var/www/rutorrent
+echo "Installez pour l'utilisateur:"
+read user
+egrep "^$user" /etc/passwd >/dev/null
+if [ $? -eq 0 ]; then
+else
+	echo "L'utilisateur n'existe pas!"
+fi
+
+echo "Entrer un port pour autodl-irssi"
+    read -p  "entrer le port: " port
+    echo "Entrer le mot de passe de autodl-irssi "
+    read -p  "Mot de passe: " pw
+
+# gestionnaire de paquet
+if [ "`dpkg --status aptitude | grep Status:`" == "Status: install ok installed" ]
+then
+        packetg="aptitude"
+else
+        packetg="apt-get"
+fi
+
+$packetg update
+$packetg safe-upgrade -y
+$packetg install -y install libarchive-zip-perl libnet-ssleay-perl libhtml-parser-perl libxml-libxml-perl libdigest-sha-perl  libjson-perl libjson-xs-perl libxml-libxslt-perl
+
+mkdir -p ~/.irssi
+mkdir -p ~/.irssi/scripts/autorun
+cd ~/.irssi/
+svn export https://svn.code.sf.net/p/autodl-irssi/code/trunk/src sc scripts
+cd scripts
+cp autodl-irssi.pl autorun/
+mkdir -p ~/.autodl
+touch ~/.autodl/autodl.cfg
+svn co https://svn.code.sf.net/p/autodl-irssi/code/trunk/rutorrent/autodl-irssi
+if [ -d "$rutorrent_dir/conf/users/$user/plugins" ]
+then
+	mkdir $rutorrent_dir/conf/users/$user/plugins/autodl-irssi
+else
+	mkdir $rutorrent_dir/conf/users/$user/plugins
+	mkdir $rutorrent_dir/conf/users/$user/plugins/autodl-irssi
+fi
+chown -R www-data:www-data autodl-irssi
+
+echo "[options]" > /home/$user/.autodl/autodl.cfg
+echo "gui-server-port = $port" >> /home/$user/.autodl/autodl.cfg
+echo "gui-server-password = $pw" >> /home/$user/.autodl/autodl.cfg
+
+echo "<?php" > $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
+echo "$autodlPort = $port;" >> $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
+echo "$autodlPassword = \"$pw\";" >> $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
+echo "?>" >> $rutorrent_dir/conf/users/$user/plugins/autodl-irssi/conf.php
+
+
