@@ -12,7 +12,7 @@ chmod a+x installscript.sh && ./installscript.sh
 Todo List
 
 - cakebox light
-- plugin autodl-irssi
+- plugin autodl-irssi (script en developent a ne pas utiliser)
 
 
 #### Inspirations & aide :) 
