@@ -21,7 +21,7 @@ $packetg safe-upgrade -y
 $packetg install -y install libarchive-zip-perl libnet-ssleay-perl libhtml-parser-perl libxml-libxml-perl libdigest-sha-perl  libjson-perl libjson-xs-perl libxml-libxslt-perl
 
 mkdir -p ~/.irssi ~/.irssi/scripts ~/.irssi/scripts/autorun
-su $USER -c 'mkdir -p ~/.autodl'
+su $user -c 'mkdir -p ~/.autodl'
 
 svn export https://svn.code.sf.net/p/autodl-irssi/code/trunk/src ~/.irssi/scripts
 cd ~/.irssi/scripts
