@@ -19,7 +19,7 @@ fi
 
 $packetg update
 $packetg safe-upgrade -y
-$packetg install -y install libarchive-zip-perl libnet-ssleay-perl libhtml-parser-perl libxml-libxml-perl libdigest-sha-perl  libjson-perl libjson-xs-perl libxml-libxslt-perl
+$packetg install -y irssi libarchive-zip-perl libnet-ssleay-perl libhtml-parser-perl libxml-libxml-perl libdigest-sha-perl  libjson-perl libjson-xs-perl libxml-libxslt-perl
 
 ## svn autodl-irssi
 svn export https://svn.code.sf.net/p/autodl-irssi/code/trunk/src ~/.irssi/scripts
