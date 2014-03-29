@@ -611,6 +611,12 @@ echo "@reboot /etc/init.d/$user-rtorrent start" >> rtorrentdem
 #install new cron file
 crontab rtorrentdem
 rm rtorrentdem
+mkdir /usr/share/mes-scripts/
+cp /root/gaaara/rtorrent-useradd /usr/share/mes-scripts/rtorrent-useradd
+chmod +x rtorrent-useradd
+cat <<'EOF' >  /root/.bashrc
+alias rtorrent-useradd='sh /usr/share/mes-scripts/rtorrent-useradd'
+EOF
 #########################################
 ##     rtorrent demon fin              ##
 #########################################
