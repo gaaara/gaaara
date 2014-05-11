@@ -9,11 +9,6 @@ cd gaaara
 chmod a+x installscript.sh && ./installscript.sh
 ```
 
-Todo List
-
-- cakebox light
-- plugin autodl-irssi 
-
 
 #### Inspirations & aide :) 
 - [Mon dedie](http://mondedie.fr/viewtopic.php?id=5302)
