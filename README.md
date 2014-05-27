@@ -1,4 +1,7 @@
-## Debian compatible ubuntu a tester
+## Debian Script
+
+## Le script n'est plus supporter un script inspiré du mien avec amélioration est disponible ici
+##http://mondedie.fr/viewtopic.php?id=5399
 
 ## Installation
 
